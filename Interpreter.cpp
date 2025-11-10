@@ -40,7 +40,7 @@ void EscInterpreter::PrinterReset()
     m_x = m_y = 0;
     m_printmode = false;
 
-    //TODO: Настраивать режимы по DIP-переключателям
+    //TODO: Configure the modes using DIP switches.
     m_fontsp = m_fontdo = m_fontfe = m_fontks = m_fontel = m_fontun = false;
     m_shifty = 720 / 6;  // 6 lines/inch
     UpdateShiftX();
@@ -51,16 +51,16 @@ void EscInterpreter::PrinterReset()
     m_charset = 0;
 }
 
-// Обновить значение m_shiftx в соответствии с выбранным шрифтом
+// Update the value of m_shiftx according to the selected font
 void EscInterpreter::UpdateShiftX()
 {
-    m_shiftx = 720 / 10;  // Обычный интервал
+    m_shiftx = 720 / 10;  // Normal spacing
     if (m_fontel)
-        m_shiftx = 720 / 12;  // Элита
+        m_shiftx = 720 / 12;  // Elite
     else if (m_fontks)
-        m_shiftx = 720 / 17;  // Сжатый
+        m_shiftx = 720 / 17;  // Condensed
 
-    if (m_fontsp)  // Шрифт вразрядку
+    if (m_fontsp)  // Spaced font
         m_shiftx *= 2;
 }
 
@@ -78,7 +78,7 @@ void EscInterpreter::NextPage()
     m_x = m_y = 0;
 }
 
-// Интерпретировать следующий токен
+// Interpret the next token
 bool EscInterpreter::InterpretNext()
 {
     if (IsEndOfFile()) return false;
@@ -90,58 +90,58 @@ bool EscInterpreter::InterpretNext()
     switch (ch)
     {
     case 0/*NUL*/: case 7/*BEL*/: case 17/*DC1*/: case 19/*DC3*/: case 127/*DEL*/:
-        break; // Игнорируемые коды
+        break; // Ignored codes
     case 24/*CAN*/:
         NextPage();
-        return false; //Конец страницы
-    case 8/*BS*/: // Backspace - сдвиг на 1 символ назад
+        return false; //End of page
+    case 8/*BS*/: // Backspace - move back 1 character
         m_x -= m_shiftx;  if (m_x < 0) m_x = 0;
         break;
-    case 9/*HT*/: // Горизонтальная табуляция - реализован частный случай
-        //NOTE: переустановка позиций табуляции игнорируется
+    case 9/*HT*/: // Horizontal tab - a special case is implemented
+        //NOTE: resetting tab positions is ignored
         m_x += m_shiftx * 8;
         m_x = (m_x / (m_shiftx * 8)) * (m_shiftx * 8);
         break;
-    case 10/*LF*/: // Line Feed - сдвиг к следующей строке
+    case 10/*LF*/: // Line Feed - move to the next line
         ShiftY(m_shifty);
         return !m_endofpage;
-    case 11/*VT*/: //Вертикальная табуляция - в частном случае удовлетворяет описанию.
-        //NOTE: Переустановка позиций табуляции игнорируется
+    case 11/*VT*/: //Vertical Tab - in this specific case, it satisfies the description.
+	    // NOTE: Resetting tab positions is ignored
         m_x = 0;  ShiftY(m_shifty);
         return !m_endofpage;
-    case 12/*FF*/: // Form Feed - !!! доделать
+    case 12/*FF*/: // Form Feed - !!! to be completed
         NextPage();
         return false;
-    case 13/*CR*/: // Carriage Return - возврат каретки
+    case 13/*CR*/: // Carriage Return - carriage return
         m_x = 0;
         break;
-    case 14/*SO*/: // Включение шрифта вразрядку
+    case 14/*SO*/: // Enable expanded font
         m_fontsp = true;
         UpdateShiftX();
         break;
-    case 15/*SI*/: // Включение сжатого шрифта (17.1 символов на дюйм)
+    case 15/*SI*/: // Enable compressed font (17.1 characters per inch)
         m_fontks = true;
         UpdateShiftX();
         break;
-    case 18/*DC2*/: // Выключение сжатого шрифта
+    case 18/*DC2*/: // Disable compressed font
         m_fontks = false;
         UpdateShiftX();
         break;
-    case 20/*DC4*/: // Выключение шрифта вразрядку
+    case 20/*DC4*/: // Disable expanded font
         m_fontsp = false;
         UpdateShiftX();
         break;
     case 27/*ESC*/:  // Expanded Function Codes
         return InterpretEscape();
 
-        /* иначе "напечатать" символ */
+        /* otherwise "print" the character */
     default:
         PrintCharacter(ch);
         m_x += m_shiftx;
         break;
     }
 
-    if (m_x >= m_limitright)  // При превышении длины строки -- автоматический переход на следующую
+    if (m_x >= m_limitright)  // If the line length is exceeded, automatically move to the next line
     {
         m_x = 0;
         ShiftY(m_shifty);  // Proceed to the next line; probably also to the next page
@@ -150,40 +150,40 @@ bool EscInterpreter::InterpretNext()
     return !m_endofpage;
 }
 
-// Интерпретировать Escape-последовательность
+// Interpret Escape sequence
 bool EscInterpreter::InterpretEscape()
 {
     unsigned char ch = GetNextByte();
     switch (ch)
     {
-    case 'U': // Печать в одном или двух направлениях
-        GetNextByte();  // Игнорируем
+    case 'U': // Printing in one or two directions
+        GetNextByte();  // Ignore
         break;
-    case 'x': // Выбор качества
+    case 'x': // Select quality
         {
             unsigned char ss = GetNextByte();
             m_printmode = (ss != 0 && ss != '0');
         }
         break;
 
-        // Группа функций character pitch
-    case 'P':  // Включение шрифта "пика"
+        // Character pitch function group
+    case 'P':  // Enable "pica" font
         m_fontel = false;
         UpdateShiftX();
         break;
-    case 'M':  // Включение шрифта "элита" (12 символов на дюйм)
+    case 'M':  // Enable "elite" font (12 characters per inch)
         m_fontel = true;
         UpdateShiftX();
         break;
-    case 15/*SI*/:  // Включение сжатого шрифта
+    case 15/*SI*/:  // Enable compressed font
         m_fontks = true;
         UpdateShiftX();
         break;
 
-    case '0':  // Установка интервала 1/8"
+    case '0':  // Set interval to 1/8"
         m_shifty = 720 / 8;
         break;
-    case '1':  // Установка интервала 7/72"
+    case '1':  // Set interval to 7/72"
         m_shifty = 720 * 7 / 72;
         break;
     case '2':
@@ -199,27 +199,27 @@ bool EscInterpreter::InterpretEscape()
         ShiftY((int)GetNextByte() * 720 / 180);
         return !m_endofpage;
 
-    case 'C': //PageLength - игнорировать
+    case 'C': //PageLength - ignore
         if (GetNextByte() == 0)
             GetNextByte();
         break;
-    case 'N': //Skip perforation - игнорировать
+    case 'N': //Skip perforation - ignore
         GetNextByte();
         break;
     case 'O': break;
-    case 'B': //Set vertical tabs - игнорировать ???
+    case 'B': //Set vertical tabs - ignore ???
         while (GetNextByte() != 0);
         break;
     case '/':
         GetNextByte();
         break;
-    case 'D': //Set horizontal tabs - игнорировать ???
+    case 'D': //Set horizontal tabs - ignore ???
         while (GetNextByte() != 0);
         break;
-    case 'Q': //Set right margin - игнорировать ???
+    case 'Q': //Set right margin - ignore ???
         {
             int n = (int)GetNextByte();
-            if (n > 0 && m_shiftx * n <= 720 * 8)  // Не меньше одного символа и не больше полезной ширины формата (8 дюймов)
+            if (n > 0 && m_shiftx * n <= 720 * 8)  // Not less than one character and not more than the usable width of the format (8 inches)
                 m_limitright = m_shiftx * n;
             break;
         }
@@ -282,16 +282,16 @@ bool EscInterpreter::InterpretEscape()
         break;
         /* reassign bit image command ??? */
     case '?': break;
-        /* download - игнорировать (???) */
+        /* download - ignore (???) */
     case '&': break; /* this command downloads character sets to the printer */
     case '%': break; /* select/deselect download character code */
     case ':': /* this command copies the internal character set into the download area */
         GetNextByte();  GetNextByte();  GetNextByte();
         break;
-    case 'R': /* international character set - игнорировать (???) */
+    case 'R': /* international character set - ignore (???) */
         m_charset = GetNextByte();
         break;
-        /* MSB control - игнорорировать (???) */
+        /* MSB control - ignore (???) */
     case '#': break; /* clear most significant bit */
     case '=': break; /* clear most significant bit */
     case '>': break; /* set most significant bit */
@@ -302,7 +302,7 @@ bool EscInterpreter::InterpretEscape()
     case '<':
         m_x = 0;    /* repositions the print head to the left most column */
         break;
-    case 14/*SO*/: // Включение шрифта вразрядку
+    case 14/*SO*/: // Enable expanded font
         m_fontsp = true;
         UpdateShiftX();
         break;
@@ -321,51 +321,51 @@ bool EscInterpreter::InterpretEscape()
         {
             int shift = GetNextByte();  shift += 256 * (int)GetNextByte();
             m_x += (int)((int)shift * 720 / (m_printmode ? 180 : 120));
-            /* !!! учесть моду LQ или DRAFT */
+            /* !!! Take into account the LQ or DRAFT mode */
         }
         break;
 
         /* CHARACTER CONTROL CODES */
-    case 'E': // Включение жирного шрифта
+    case 'E': // Enable bold font
         m_fontfe = true;
         UpdateShiftX();
         break;
-    case 'F': // Выключение жирного шрифта
+    case 'F': // Disable bold font
         m_fontfe = false;
         UpdateShiftX();
         break;
-    case 'G':  // Включение двойной печати
+    case 'G':  // Enable double printing
         m_fontdo = true;
         break;
-    case 'H':  // Выключение двойной печати
+    case 'H':  // Disable double printing
         m_fontdo = false;
         m_superscript = m_subscript = false;
         break;
-    case '-': // Подчеркивание
+    case '-': // Underline
         {
             unsigned char ss = GetNextByte();
             m_fontun = (ss != 0 && ss != '0');
         }
         break;
 
-    case 'S': // Включение печати в верхней или нижней части строки
+    case 'S': // Enable printing in the upper or lower part of the line
         {
             unsigned char ss = GetNextByte();
             m_superscript = (ss == 0 || ss == '0');
             m_subscript = (ss == 1 || ss == '1');
         }
         break;
-    case 'T': // Выключение печати в верхней или нижней части строки
+    case 'T': // Disable printing in the upper or lower part of the line
         m_superscript = m_subscript = false;
         break;
-    case 'W': // Включение или выключение шрифта вразрядку
+    case 'W': // Enable or disable expanded font
         {
             unsigned char ss = GetNextByte();
             m_fontsp = (ss != 0 && ss != '0');
             UpdateShiftX();
         }
         break;
-    case '!': // Выбор вида шрифта
+    case '!': // Font type selection
         {
             unsigned char fontbits = GetNextByte();
             m_fontel = (fontbits & 1) != 0;
@@ -383,7 +383,7 @@ bool EscInterpreter::InterpretEscape()
         break;
         /* character table */
     case 't': /* select character table ??? */
-        GetNextByte(); /* игнорировать */
+        GetNextByte(); /* ignore */
         break;
         /* double height */
     case 'w': /* select double height !!! */
@@ -397,7 +397,7 @@ bool EscInterpreter::InterpretEscape()
         break;
         /* cut sheet feeder control */
     case 25/*EM*/:
-        GetNextByte(); /* ??? - игнорировать */
+        GetNextByte(); /* ??? - ignore */
         break;
     }
 
@@ -406,15 +406,15 @@ bool EscInterpreter::InterpretEscape()
 
 void EscInterpreter::printGR9(int dx, bool dblspeed)
 {
-    int width = GetNextByte();  // Количество "кусочков" данных о изображении
+    int width = GetNextByte();  // Number of data "chunks" for the image
     width += 256 * (int)GetNextByte();
 
-    // Читать и выводить данные
+    // Read and output data
     unsigned char lastfbyte = 0;
     for (; width > 0; width--)
     {
         unsigned char fbyte = GetNextByte();
-        if (dblspeed)  // В режиме высокой скорости игнорируем подряд встречающиеся удары
+        if (dblspeed)  // В In high-speed mode, ignore consecutive strikes
         {
             fbyte &= ~lastfbyte;
             lastfbyte = fbyte;
@@ -425,8 +425,8 @@ void EscInterpreter::printGR9(int dx, bool dblspeed)
             if (fbyte & mask)
             {
                 DrawStrike(float(m_x), float(m_y + i * 12));
-                /* 12 соответствует 1/60 inch... На самом деле расстояние между иглами у
-                9-pin dot matrix printers = 1/72 inch, но при эмуляции на 24-pin принимается 1/60 */
+                /* 12 corresponds to 1/60 inch... In reality, the distance between needles in
+                9-pin dot matrix printers = 1/72 inch, but when emulating on a 24-pin printer, 1/60 is used */
             }
             mask >>= 1;
         }
@@ -436,10 +436,10 @@ void EscInterpreter::printGR9(int dx, bool dblspeed)
 
 void EscInterpreter::printGR24(int dx)
 {
-    int width = GetNextByte(); // Количество "кусочков" данных о изображении
+    int width = GetNextByte(); // Number of data "chunks" for the image
     width += 256 * (int)GetNextByte();
 
-    // Читать и выводить данные
+    // Read and output data
     for (; width > 0; width--)
     {
         for (unsigned char n = 0; n < 3; n++)
@@ -451,7 +451,7 @@ void EscInterpreter::printGR24(int dx)
                 if (fbyte & mask)
                 {
                     DrawStrike(float(m_x), float((m_y + (n * 4 * 8/*игл*/) + i * 4)));
-                    /* 4 соответствует 1/180 inch - расстояние между иглами у 24-pin dot matrix printers */
+                    /* 4 corresponds to 1/180 inch - the distance between needles in 24-pin dot matrix printers */
                 }
                 mask >>= 1;
             }
@@ -465,27 +465,27 @@ void EscInterpreter::PrintCharacter(unsigned char ch)
     if (ch < 32) return;
     if (ch < 160 && ch > 126) return;
 
-    // Вычисляем символ знакогенератора по текущему набору символов
+    // Calculate the character generator symbol based on the current character set
     int charset = m_charset ^ (ch > 128 ? 1 : 0);
     ch &= 0x7f;
     int symbol = ch;
     if (ch >= (unsigned char)'@' && charset != 0)
         symbol += 68;
 
-    // Получаем адрес символа в знакогенераторе
+    // Get the address of the character in the character generator
     const unsigned short* pchardata = RobotronFont + int(symbol - 32) * 9;
 
-    float step = float(m_shiftx) / 11.0f;  // Шаг по горизонтали
+    float step = float(m_shiftx) / 11.0f;  // Horizontal step
     float y = float(m_y);
     if (m_subscript) y += 4 * 12;
 
-    // Цикл печати символа по строкам
+    // Loop for printing the character line by line
     unsigned short prevdata = 0;
     for (int line = 0; line < 9; line++)
     {
         unsigned short data = pchardata[line];
 
-        // Особая обработка для над- и под-строчных символов
+        // Special handling for superscript and subscript characters
         if ((m_superscript || m_subscript))
         {
             if ((line & 1) == 0)
@@ -495,11 +495,11 @@ void EscInterpreter::PrintCharacter(unsigned char ch)
             }
             else
             {
-                data |= prevdata;  // Объединяем две строки символа в одну
+                data |= prevdata;  // Combine two lines of the character into one
             }
         }
 
-        for (int col = 0; col < 9; col++)  // Цикл печати точек строки
+        for (int col = 0; col < 9; col++)  // Loop for printing the dots of the line
         {
             unsigned short bit = (data >> col) & 1;
             if (m_fontun && line == 8) bit = 1;
@@ -509,13 +509,13 @@ void EscInterpreter::PrintCharacter(unsigned char ch)
             if (m_fontsp)
                 DrawStrike(m_x + (col + 1.0f) * step, y);
 
-            //TODO: Учитывать m_fontfe (жирный шрифт)
+            //TODO: Take into account m_fontfe (bold font)
         }
 
-        y += 12;  // 12 соответствует 1/60 inch
+        y += 12;  // 12 corresponds to 1/60 inch
     }
 
-    // Для m_fontun добивать последнюю точку
+    // For m_fontun, add the last point
     if (m_fontun)
         DrawStrike(m_x + 9.0f * step, float(m_y + 8 * 12));
 }
@@ -524,7 +524,7 @@ void EscInterpreter::DrawStrike(float x, float y)
 {
     float cx = float(m_marginleft) + x;
     float cy = float(m_margintop) + y;
-    //TODO: Учитывать m_fontdo в радиусе точки
+    //TODO: Take into account m_fontdo in the point radius
     float cr = 6.0f;
 
     m_output.WriteStrike(cx, cy, cr);

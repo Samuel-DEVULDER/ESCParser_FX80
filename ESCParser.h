@@ -145,15 +145,15 @@ private:  // Current state
     int  m_shiftx, m_shifty;  // Shift for text printout
     bool m_printmode;   // false - DRAFT, true - LQ
     bool m_endofpage;
-    bool m_fontsp;      // Шрифт вразрядку
-    bool m_fontdo;      // Двойная печать
-    bool m_fontfe;      // Жирный шрифт
-    bool m_fontks;      // Сжатый шрифт
-    bool m_fontel;      // Шрифт "элита"
-    bool m_fontun;      // Подчеркивание
-    bool m_superscript; // Верхний регистр
-    bool m_subscript;   // Нижний регистр
-    unsigned char m_charset;  // Номер набора символов
+    bool m_fontsp;      // Spaced fond
+    bool m_fontdo;      // Double printing
+    bool m_fontfe;      // Bold font
+    bool m_fontks;      // Compressed font
+    bool m_fontel;      // "Elite" font
+    bool m_fontun;      // Underline
+    bool m_superscript; // Super-script
+    bool m_subscript;   // Sub-script
+    unsigned char m_charset;  // Character set number
 
 public:
     // Constructor
