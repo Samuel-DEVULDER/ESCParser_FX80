@@ -1,0 +1,24 @@
+include Makefile
+
+MACHINE:=$(shell uname -m)
+DATE:=$(shell date +%FT%T%Z || date)
+OS:=$(shell uname -o | tr "/" "_")
+EXE=
+
+CC=gcc
+CFLAGS=-O3 -Wall
+
+ifeq ($(OS),Windows_NT)
+        OS:=win
+endif
+
+ifeq ($(OS),Cygwin)
+        OS:=win
+endif
+
+ifeq ($(OS),win)
+        CC=i686-w64-mingw32-gcc  -m32 -static
+        CXX=i686-w64-mingw32-g++ -m32 -static
+        MACHINE=x86
+        EXE=.exe
+endif
