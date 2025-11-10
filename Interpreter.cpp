@@ -15,7 +15,7 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 
 EscInterpreter::EscInterpreter(std::istream& input, OutputDriver& output) :
-    m_output(output), m_input(input)
+    m_input(input), m_output(output)
 {
     m_marginleft = 96;  // 96/720 inch = 9.6 points
     m_margintop = 160;  // 160/720 inch = 16 points
