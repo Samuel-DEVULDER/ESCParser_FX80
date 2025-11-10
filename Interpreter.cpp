@@ -199,24 +199,24 @@ bool EscInterpreter::InterpretEscape()
         ShiftY((int)GetNextByte() * 720 / 180);
         return !m_endofpage;
 
-    case 'C': //PageLength - ignore
+    case 'C': // PageLength - ignore
         if (GetNextByte() == 0)
             GetNextByte();
         break;
-    case 'N': //Skip perforation - ignore
+    case 'N': // Skip perforation - ignore
         GetNextByte();
         break;
     case 'O': break;
-    case 'B': //Set vertical tabs - ignore ???
+    case 'B': // Set vertical tabs - ignore ???
         while (GetNextByte() != 0);
         break;
     case '/':
         GetNextByte();
         break;
-    case 'D': //Set horizontal tabs - ignore ???
+    case 'D': // Set horizontal tabs - ignore ???
         while (GetNextByte() != 0);
         break;
-    case 'Q': //Set right margin - ignore ???
+    case 'Q': // Set right margin - ignore ???
         {
             int n = (int)GetNextByte();
             if (n > 0 && m_shiftx * n <= 720 * 8)  // Not less than one character and not more than the usable width of the format (8 inches)
@@ -414,7 +414,7 @@ void EscInterpreter::printGR9(int dx, bool dblspeed)
     for (; width > 0; width--)
     {
         unsigned char fbyte = GetNextByte();
-        if (dblspeed)  // Â In high-speed mode, ignore consecutive strikes
+        if (dblspeed)  // In high-speed mode, ignore consecutive strikes
         {
             fbyte &= ~lastfbyte;
             lastfbyte = fbyte;
@@ -450,7 +450,7 @@ void EscInterpreter::printGR24(int dx)
             {
                 if (fbyte & mask)
                 {
-                    DrawStrike(float(m_x), float((m_y + (n * 4 * 8/*èãë*/) + i * 4)));
+                    DrawStrike(float(m_x), float((m_y + (n * 4 * 8/*Ã¨Ã£Ã«*/) + i * 4)));
                     /* 4 corresponds to 1/180 inch - the distance between needles in 24-pin dot matrix printers */
                 }
                 mask >>= 1;
