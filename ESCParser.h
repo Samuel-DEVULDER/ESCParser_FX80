@@ -22,6 +22,48 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 extern unsigned short RobotronFont[];
 
+//////////////////////////////////////////////////////////////////////
+// Txt chunk
+class TxtChunk
+{
+protected:
+    std::vector<unsigned char> m_buf; // utf-16
+	int m_x = 0, m_y = 0, m_w = 0, m_h = 0;
+	
+public:
+    TxtChunk() : m_buf() { }
+    ~TxtChunk() { }
+	
+	bool canSet(int x, int y, int w, int h);
+	void set(unsigned char ch, int x, int y, int w, int h);
+	
+	size_t size() {
+		return m_buf.size();
+	}
+	
+	unsigned char get(size_t pos) {
+		return pos<m_buf.size() ? m_buf[pos] : 0;
+	}
+	
+	void get(std::string &buf) {
+		for(int i = 0, l = m_buf.size(); i<l; ++i) {
+			buf.push_back(m_buf[i]);
+		}
+	}
+	
+	int getY() {return m_y;}
+	
+	void getXY(int& x, int& y) {
+		x = m_x;
+		y = m_y;
+	}
+	
+	void reset() {
+		m_x = m_y = m_w = m_h = 0;
+		m_buf.clear();
+	}
+};
+
 
 //////////////////////////////////////////////////////////////////////
 // Output drivers
@@ -32,6 +74,7 @@ enum
     OUTPUT_DRIVER_SVG = 1,
     OUTPUT_DRIVER_POSTSCRIPT = 2,
     OUTPUT_DRIVER_PDF = 3,
+	OUTPUT_DRIVER_TXT = 4
 };
 
 // Base abstract class for output drivers
@@ -55,6 +98,8 @@ public:
     virtual void WritePageEnding() { }  // Overwrite if needed
     // Write strike by one pin
     virtual void WriteStrike(float x, float y, float r) = 0;  // Always overwrite
+	// Write a character
+	virtual void WriteChar(unsigned char ch, int x, int y, int w, int h) { }
 };
 
 // Stub driver, does nothing
@@ -66,6 +111,18 @@ public:
 public:
     virtual void WriteStrike(float x, float y, float r) { }
 };
+
+// Dumb driver, just print text
+class OutputDriverTxt : public OutputDriverStub
+{
+protected:
+    TxtChunk m_txt;
+public:
+    OutputDriverTxt(std::ostream& output) : OutputDriverStub(output), m_txt() { };
+	void WriteEnding();
+	void WriteChar(unsigned char ch, int x, int y, int w, int h);
+};
+
 
 // SVG driver, for one-page output only
 class OutputDriverSvg : public OutputDriver

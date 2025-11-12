@@ -47,6 +47,8 @@ bool ParseCommandLine(int argc, char* argv[])
                 g_OutputDriverType = OUTPUT_DRIVER_POSTSCRIPT;
             else if (_stricmp(arg + 1, "pdf") == 0)
                 g_OutputDriverType = OUTPUT_DRIVER_PDF;
+            else if (_stricmp(arg + 1, "txt") == 0)
+                g_OutputDriverType = OUTPUT_DRIVER_TXT;
             else
             {
                 std::cerr << "Unknown option: " << arg << std::endl;
@@ -78,7 +80,9 @@ void PrintUsage()
             << "Options:" << std::endl
             << "\t" OPTIONSTR "ps\tPostScript output with multipage support" << std::endl
             << "\t" OPTIONSTR "svg\tSVG output, no multipage support" << std::endl
-            << "\t" OPTIONSTR "pdf\tPDF output with multipage support" << std::endl;
+            << "\t" OPTIONSTR "pdf\tPDF output with multipage support" << std::endl
+			<< "\t" OPTIONSTR "txt\tTXT output" << std::endl
+			;
 }
 
 int main(int argc, char* argv[])
@@ -102,6 +106,9 @@ int main(int argc, char* argv[])
         break;
     case OUTPUT_DRIVER_PDF:
         g_pOutputDriver = new OutputDriverPdf(std::cout);
+        break;
+    case OUTPUT_DRIVER_TXT:
+        g_pOutputDriver = new OutputDriverTxt(std::cout);
         break;
     default:
         std::cerr << "Output driver type is not defined." << std::endl;

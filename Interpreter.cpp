@@ -462,6 +462,8 @@ void EscInterpreter::printGR24(int dx)
 
 void EscInterpreter::PrintCharacter(unsigned char ch)
 {
+	m_output.WriteChar(ch, m_x, m_y, m_shiftx, m_shifty);
+	
     if (ch < 32) return;
     if (ch < 160 && ch > 126) return;
 

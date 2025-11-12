@@ -13,6 +13,56 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "zlib/zlib.h"
 
+//////////////////////////////////////////////////////////////////////
+// TxtChunk
+static void overwrite(unsigned char& c1, unsigned char c2) {
+	if(c1!=' ' && strchr("'^`\",", c2)==NULL) c2 = c1;
+	c1 = c2;
+}
+
+bool TxtChunk::canSet(int x, int y, int w, int h) {
+	if(m_w == 0 || m_h == 0) return true;
+	if(m_w != w || m_h != h) return false;
+	if(m_y != y)             return false;
+	if(m_x >  x)             return false;
+	size_t pos = (x - m_x)/m_w;
+	return pos <= m_buf.size();
+}
+
+void TxtChunk::set(unsigned char ch, int x, int y, int w, int h) {
+	if(m_w==0 || m_h==0) {
+		m_x = x; m_y = y;
+		m_w = w; m_h = h;
+		m_buf.clear();
+	}
+	size_t pos = (x - m_x)/m_w;
+	while(pos >= m_buf.size()) m_buf.push_back(32);
+	overwrite(m_buf[pos], ch);
+}
+
+//////////////////////////////////////////////////////////////////////
+// txt driver
+
+void OutputDriverTxt::WriteEnding()
+{
+	if(m_txt.size()) {
+		std::string s;
+		m_txt.get(s);
+		m_output << s << std::endl;
+	}
+}
+
+void OutputDriverTxt::WriteChar(unsigned char ch, int x, int y, int w, int h) 
+{
+	if(!m_txt.canSet(x,y,w,h)) {
+		std::string s; m_txt.get(s);
+		
+		m_output << s;
+		if(y>m_txt.getY()) m_output << std::endl;
+		m_txt.reset();
+	}
+	m_txt.set(ch,x,y,w,h);
+}
 
 //////////////////////////////////////////////////////////////////////
 // SVG driver
