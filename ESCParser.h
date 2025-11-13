@@ -27,41 +27,41 @@ extern unsigned short RobotronFont[];
 class TxtChunk
 {
 protected:
-    std::vector<unsigned char> m_buf; // utf-16
+    std::vector<unsigned short> m_buf; // utf-16
 	int m_x = 0, m_y = 0, m_w = 0, m_h = 0;
 	
 public:
     TxtChunk() : m_buf() { }
     ~TxtChunk() { }
-	
+
+	size_t size() {return m_buf.size();}
+		
 	bool canSet(int x, int y, int w, int h);
-	void set(unsigned char ch, int x, int y, int w, int h);
+	void set(unsigned short ch, int x, int y, int w, int h);
+	TxtChunk &printAscii(std::ostream &s); // 7 bits
+	TxtChunk &printWinAnsi(std::ostream &s); // 8 bit
+	// TODO : unicode 16
 	
-	size_t size() {
-		return m_buf.size();
+	unsigned short get(size_t pos) {
+		return pos<m_buf.size() ? m_buf[pos] : 32;
 	}
 	
-	unsigned char get(size_t pos) {
-		return pos<m_buf.size() ? m_buf[pos] : 0;
-	}
-	
-	void get(std::string &buf) {
-		for(int i = 0, l = m_buf.size(); i<l; ++i) {
-			buf.push_back(m_buf[i]);
-		}
-	}
-	
+	int getX() {return m_x;}
 	int getY() {return m_y;}
 	
-	void getXY(int& x, int& y) {
-		x = m_x;
-		y = m_y;
-	}
-	
-	void reset() {
+	TxtChunk &reset() {
 		m_x = m_y = m_w = m_h = 0;
 		m_buf.clear();
+		return *this;
 	}
+	
+	TxtChunk &trim() {
+		size_t i = size();
+		while(i && m_buf[i-1]==32) --i;
+		m_buf.resize(i);
+		return *this;
+	}
+	
 };
 
 

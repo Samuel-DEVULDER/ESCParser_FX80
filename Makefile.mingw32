@@ -22,3 +22,12 @@ ifeq ($(OS),win)
         MACHINE=x86
         EXE=.exe
 endif
+
+tst: tst.txt tst.pdf
+
+tst.txt: ESCParser tst.tst
+	./ESCParser -txt tst.tst >$@
+
+tst.pdf: ESCParser tst.tst
+	./ESCParser -pdf tst.tst >$@
+	

@@ -15,9 +15,118 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 //////////////////////////////////////////////////////////////////////
 // TxtChunk
-static void overwrite(unsigned char& c1, unsigned char c2) {
-	if(c1!=' ' && strchr("'^`\",", c2)==NULL) c2 = c1;
+static void printOver(unsigned short& c1, unsigned short c2) {
+	char c;
+	if(c1==(c='`') || (c2==c && (c2=c1))) {
+		switch(c2) {
+			case 'A': c2 = 192; break;
+			case 'E': c2 = 200; break;
+			case 'I': c2 = 204; break;
+			case 'O': c2 = 210; break;
+			case 'U': c2 = 217; break;
+			case 'a': c2 = 224; break;
+			case 'e': c2 = 232; break;
+			case 'i': c2 = 236; break;
+			case 'o': c2 = 242; break;
+			case 'u': c2 = 249; break;
+		}
+	} else if(c1==(c='\'') || (c2==c && (c2=c1))) {
+		switch(c2) {
+			case 'A': c2 = 193; break;
+			case 'E': c2 = 201; break;
+			case 'I': c2 = 205; break;
+			case 'O': c2 = 211; break;
+			case 'U': c2 = 218; break;
+			case 'Y': c2 = 221; break;
+			case 'a': c2 = 225; break;
+			case 'e': c2 = 233; break;
+			case 'i': c2 = 237; break;
+			case 'o': c2 = 243; break;
+			case 'u': c2 = 250; break;
+			case 'y': c2 = 253; break;
+		}
+	} else if(c1==(c='^') || (c2==c && (c2=c1))) {
+		switch(c2) {
+			case 'A': c2 = 194; break;
+			case 'E': c2 = 202; break;
+			case 'I': c2 = 206; break;
+			case 'O': c2 = 212; break;
+			case 'U': c2 = 219; break;
+			case 'a': c2 = 226; break;
+			case 'e': c2 = 234; break;
+			case 'i': c2 = 238; break;
+			case 'o': c2 = 244; break;
+			case 'u': c2 = 251; break;
+		}
+	} else if(c1==(c='~') || (c2==c && (c2=c1))) {
+		switch(c2) {
+			case 'A': c2 = 195; break;
+			case 'N': c2 = 209; break;
+			case 'O': c2 = 213; break;
+			case 'a': c2 = 227; break;
+			case 'n': c2 = 241; break;
+			case 'o': c2 = 245; break;
+		}
+	} else if(c1==(c='"') || (c2==c && (c2=c1))) {
+		switch(c2) {
+			case 'A': c2 = 196; break;
+			case 'E': c2 = 203; break;
+			case 'I': c2 = 207; break;
+			case 'O': c2 = 214; break;
+			case 'U': c2 = 220; break;
+			case 'a': c2 = 228; break;
+			case 'e': c2 = 235; break;
+			case 'i': c2 = 239; break;
+			case 'o': c2 = 246; break;
+			case 'u': c2 = 252; break;
+			case 'y': c2 = 255; break;
+		}
+	} else if(c1==(c=',') || (c2==c && (c2=c1))) {
+		switch(c2) {
+			case 'C': c2 = 199; break;
+			case 'c': c2 = 231; break;
+		}
+	} else if(32<c1 && c1<128 && c2>=128) c2 = c1;
 	c1 = c2;
+}
+
+static std::string ascii[256] = {
+	"[NUL]","[SOH]","[STX]","[ETX]","[EOT]","[ENQ]","[ACK]","[BEL]",
+	"[BS]","[HT]","[LF]","[VT]","[FF]","[CR]","[SO]","[SI]",
+	"[DLE]","[DC1]","[DC2]","[DC3]","[DC4]","[NAK]","[SYN]","[ETB]",
+	"[CAN]","[EM]","[SUB]","[ESC]","[FS]","[GS]","[RS]","[US]",
+	" ","!","\"","#","$","%","&","'","(",")","*","+",",","-",".",",",
+	"0","1","2","3","4","5","6","7","8","9",":",";","<","=",">","?",
+	"@","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O",
+	"P","Q","R","S","T","U","V","W","X","Y","Z","[","\\","]","^","_",
+	"`","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o",
+	"p","q","r","s","t","u","v","w","x","y","z","{","|","}","~","[DEL]",
+	"EUR","_",",","f",",,","...","+","++","^","o/oo","S","<","OE","_","Z","_",
+	"?","`","'","\"","\"","*","-","--","~","TM","s",">","oe","_","z","Y",
+	" ","!","c","L","o","Y","|","S","\"","(C)","a","<<","-","-","(R)","-",
+	"o","+/-","2","3","'","u","P",".",",","1","o",">>","1/4","1/2","3/4","?",
+	"A","A","A","A","A","A","AE","C","E","E","E","E","I","I","I","I",
+	"D","N","O","O","O","O","O","x","O","U","U","U","U","Y","Th","ss",
+	"a","a","a","a","a","a","ae","c","e","e","e","e","i","i","i","i",
+	"d","n","o","o","o","o","o","/","o","u","u","u","u","y","t","y"
+};
+
+TxtChunk &TxtChunk::printAscii(std::ostream &out) {
+	for(int i=0, m=size(); i<m; ++i) {
+		unsigned short c = m_buf[i];
+		out << (c<256 ? ascii[c] : "_");
+	}
+	return *this;
+}
+
+TxtChunk &TxtChunk::printWinAnsi(std::ostream &out) {
+	char buf[5];
+	for(int i=0, m=size(); i<m; ++i) {
+		unsigned short c = m_buf[i];
+		sprintf(buf, 31<c && c<128 ? "%c" : "\\%03o", c&255);
+		out << buf;
+	}
+	return *this;
 }
 
 bool TxtChunk::canSet(int x, int y, int w, int h) {
@@ -29,7 +138,7 @@ bool TxtChunk::canSet(int x, int y, int w, int h) {
 	return pos <= m_buf.size();
 }
 
-void TxtChunk::set(unsigned char ch, int x, int y, int w, int h) {
+void TxtChunk::set(unsigned short ch, int x, int y, int w, int h) {
 	if(m_w==0 || m_h==0) {
 		m_x = x; m_y = y;
 		m_w = w; m_h = h;
@@ -37,7 +146,7 @@ void TxtChunk::set(unsigned char ch, int x, int y, int w, int h) {
 	}
 	size_t pos = (x - m_x)/m_w;
 	while(pos >= m_buf.size()) m_buf.push_back(32);
-	overwrite(m_buf[pos], ch);
+	printOver(m_buf[pos], ch);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -45,21 +154,15 @@ void TxtChunk::set(unsigned char ch, int x, int y, int w, int h) {
 
 void OutputDriverTxt::WriteEnding()
 {
-	if(m_txt.size()) {
-		std::string s;
-		m_txt.get(s);
-		m_output << s << std::endl;
-	}
+	m_txt.trim().printAscii(m_output).reset();
 }
 
 void OutputDriverTxt::WriteChar(unsigned char ch, int x, int y, int w, int h) 
 {
 	if(!m_txt.canSet(x,y,w,h)) {
-		std::string s; m_txt.get(s);
-		
-		m_output << s;
-		if(y>m_txt.getY()) m_output << std::endl;
-		m_txt.reset();
+		bool eol = y != m_txt.getY();
+		m_txt.trim().printAscii(m_output).reset();
+		if(eol) m_output << std::endl;
 	}
 	m_txt.set(ch,x,y,w,h);
 }
