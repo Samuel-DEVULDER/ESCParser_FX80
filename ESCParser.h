@@ -38,8 +38,8 @@ public:
 		
 	bool canSet(int x, int y, int w, int h);
 	void set(unsigned short ch, int x, int y, int w, int h);
-	TxtChunk &printAscii(std::ostream &s); // 7 bits
-	TxtChunk &printWinAnsi(std::ostream &s); // 8 bit
+	TxtChunk &appendAscii(std::string &s); // 7 bits
+	TxtChunk &appendWinAnsi(std::string &s); // 8 bit
 	// TODO : unicode 16
 	
 	unsigned short get(size_t pos) {
@@ -48,8 +48,10 @@ public:
 	
 	int getX() {return m_x;}
 	int getY() {return m_y;}
+	int getW() {return m_w;}
+	int getH() {return m_h;}
 	
-	TxtChunk &reset() {
+	TxtChunk &clear() {
 		m_x = m_y = m_w = m_h = 0;
 		m_buf.clear();
 		return *this;
@@ -99,7 +101,7 @@ public:
     // Write strike by one pin
     virtual void WriteStrike(float x, float y, float r) = 0;  // Always overwrite
 	// Write a character
-	virtual void WriteChar(unsigned char ch, int x, int y, int w, int h) { }
+	virtual void WriteChar(unsigned short ch, int x, int y, int w, int h) { }
 };
 
 // Stub driver, does nothing
@@ -119,8 +121,8 @@ protected:
     TxtChunk m_txt;
 public:
     OutputDriverTxt(std::ostream& output) : OutputDriverStub(output), m_txt() { };
-	void WriteEnding();
-	void WriteChar(unsigned char ch, int x, int y, int w, int h);
+	virtual void WriteEnding();
+	virtual void WriteChar(unsigned short ch, int x, int y, int w, int h);
 };
 
 
@@ -176,11 +178,16 @@ public:
     virtual void WritePageBeginning(int pageno);
     virtual void WritePageEnding();
     virtual void WriteStrike(float x, float y, float r);
+	virtual void WriteChar(unsigned short ch, int x, int y, int w, int h);
 
 private:
     std::vector<PdfXrefItem> xref;
     std::string pagebuf;
     float strikesize;
+
+protected:	
+	std::string m_txtbuf;
+    TxtChunk m_txt;
 };
 
 

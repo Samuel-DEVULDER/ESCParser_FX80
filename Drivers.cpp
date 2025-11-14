@@ -111,20 +111,21 @@ static std::string ascii[256] = {
 	"d","n","o","o","o","o","o","/","o","u","u","u","u","y","t","y"
 };
 
-TxtChunk &TxtChunk::printAscii(std::ostream &out) {
+TxtChunk &TxtChunk::appendAscii(std::string &out) {
 	for(int i=0, m=size(); i<m; ++i) {
 		unsigned short c = m_buf[i];
-		out << (c<256 ? ascii[c] : "_");
+		out.append(c<256 ? ascii[c] : "_");
 	}
 	return *this;
 }
 
-TxtChunk &TxtChunk::printWinAnsi(std::ostream &out) {
+TxtChunk &TxtChunk::appendWinAnsi(std::string &out) {
 	char buf[5];
 	for(int i=0, m=size(); i<m; ++i) {
 		unsigned short c = m_buf[i];
-		sprintf(buf, 31<c && c<128 ? "%c" : "\\%03o", c&255);
-		out << buf;
+		sprintf(buf, 31<c && c<128 ? c=='(' || c=='\\' || c==')' ? 
+					"\\%c" : "%c" : "\\%03o", c&255);
+		out.append(buf);
 	}
 	return *this;
 }
@@ -154,14 +155,16 @@ void TxtChunk::set(unsigned short ch, int x, int y, int w, int h) {
 
 void OutputDriverTxt::WriteEnding()
 {
-	m_txt.trim().printAscii(m_output).reset();
+	std::string str;
+	m_txt.trim().appendAscii(str).clear();
+	m_output << str;
 }
 
-void OutputDriverTxt::WriteChar(unsigned char ch, int x, int y, int w, int h) 
+void OutputDriverTxt::WriteChar(unsigned short ch, int x, int y, int w, int h) 
 {
 	if(!m_txt.canSet(x,y,w,h)) {
 		bool eol = y != m_txt.getY();
-		m_txt.trim().printAscii(m_output).reset();
+		WriteEnding();
 		if(eol) m_output << std::endl;
 	}
 	m_txt.set(ch,x,y,w,h);
@@ -263,7 +266,7 @@ void OutputDriverPdf::WriteBeginning(int pagestotal)
     {
         if (i > 0)
             m_output << " ";
-        m_output << i * 2 + 4 << " 0 R";  // Page objects: 4, 6, 8, etc.
+        m_output << i * 3 + 4 << " 0 R";  // Page objects: 4, 7, 10, etc.
     }
     m_output << "] /Count " << pagestotal << ">>" << std::endl;
     m_output << "endobj" << std::endl;
@@ -291,12 +294,17 @@ void OutputDriverPdf::WriteEnding()
 void OutputDriverPdf::WritePageBeginning(int pageno)
 {
     xref.push_back(PdfXrefItem(m_output.tellp(), 0, 'n'));
-    int objnopage = pageno * 2 + 2;  // 4, 6, 8, etc.
-    int objnostream = pageno * 2 + 3;  // 5, 7, 9, etc.
+    int objnopage   = pageno * 3 + 1;  // 4, 7, 10, etc.
+    int objnofont   = pageno * 3 + 2;  // 5, 8, 11, etc.
+    int objnostream = pageno * 3 + 3;  // 6, 9, 12, etc.
     m_output << objnopage << " 0 obj<</Type /Page /Parent 3 0 R ";
     m_output << "/MediaBox [0 0 " << PdfPageSizeX << " " << PdfPageSizeY << "] ";  // Page bounds
     m_output << "/Contents " << objnostream << " 0 R ";
-    m_output << "/Resources<< >> >>" << std::endl;  // Resources is required key
+    m_output << "/Resources << /Font << /F1 "<<objnofont<<" 0 R >> >>" << std::endl;  // Resources is required key
+    m_output << ">> endobj" << std::endl;
+
+	xref.push_back(PdfXrefItem(m_output.tellp(), 0, 'n'));
+    m_output << objnofont << " 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier >>" << std::endl;
     m_output << "endobj" << std::endl;
 
     xref.push_back(PdfXrefItem(m_output.tellp(), 0, 'n'));
@@ -305,10 +313,40 @@ void OutputDriverPdf::WritePageBeginning(int pageno)
     strikesize = 0.0f;
     pagebuf.clear();
     pagebuf.append("1 J");  // Round cap
+	m_txtbuf.clear();
+	m_txt.clear();
+}
+
+static void addPdfBT(std::string &str, TxtChunk &txt) {
+	if(txt.trim().size()) {
+		char buf[64];
+		float cx = txt.getX() / 10.0f;
+		float cy = PdfPageSizeY - txt.getY() / 10.0f;
+		float cw = txt.getW() / 10.0f;
+		float ch = txt.getH() / 10.0f;
+
+		// sprintf(buf, " BT /F1 %g Tf %g 100.0 Tz %g %g Tm 0 Tr (",
+			// 12.0f, 60.0f, cx-1, cy-7.5);
+		
+		sprintf(buf, " %g 0 0 %g %g %g Tm (",
+				(cw*100)/60, ch*.559f, cx-1, cy-.559*ch + 1.5);
+		
+		// sprintf(buf, " BT /F1 9 Tf %g %g Td (", cx, cy);
+		str.append(buf);
+		txt.appendWinAnsi(str);
+		str.append(") Tj");
+	}
+	txt.clear();
 }
 
 void OutputDriverPdf::WritePageEnding()
 {
+	addPdfBT(m_txtbuf, m_txt);
+	pagebuf.append("\nBT /F1 1 Tf 3 Tr");
+	pagebuf.append(m_txtbuf); 
+	pagebuf.append(" ET");
+	m_txtbuf.clear();
+	
     // Preparing for inflate
     size_t outsize = pagebuf.length() + pagebuf.length() / 2 + 200;
     outsize = (outsize + 3) / 4 * 4;  // Make sure we have 4-byte aligned size
@@ -354,6 +392,12 @@ void OutputDriverPdf::WritePageEnding()
 
     deflateEnd(&zstrm);
     delete[] zbuffer;  zbuffer = 0;
+}
+
+void OutputDriverPdf::WriteChar(unsigned short ch, int x, int y, int w, int h) 
+{
+	if(!m_txt.canSet(x,y,w,h)) addPdfBT(m_txtbuf, m_txt);
+	m_txt.set(ch,x,y,w,h);
 }
 
 void OutputDriverPdf::WriteStrike(float x, float y, float r)
