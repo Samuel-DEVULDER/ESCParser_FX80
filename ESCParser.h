@@ -63,7 +63,6 @@ public:
 		m_buf.resize(i);
 		return *this;
 	}
-	
 };
 
 

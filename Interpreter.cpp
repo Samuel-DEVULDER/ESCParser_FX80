@@ -9,7 +9,7 @@ See the GNU Lesser General Public License for more details.
 UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "ESCParser.h"
-
+#include "FX80Font.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -462,22 +462,16 @@ void EscInterpreter::printGR24(int dx)
 
 void EscInterpreter::PrintCharacter(unsigned char ch)
 {
-	m_output.WriteChar(ch, 
-		m_marginleft + m_x, m_margintop + m_y + (m_subscript ? 4*12 : 0),
-		m_shiftx, (m_superscript || m_subscript) ? m_shifty/2 : m_shifty);
+	struct glyph *gl = FontGlyph(m_charset, ch);
+
+	m_output.WriteChar(gl->ansi, 
+		m_marginleft + m_x, 
+		m_margintop + m_y + (m_subscript ? 4*12 : 0),
+		m_shiftx, 
+		(m_superscript || m_subscript) ? m_shifty/2 : m_shifty);
 	
-    if (ch < 32) return;
-    if (ch < 160 && ch > 126) return;
-
-    // Calculate the character generator symbol based on the current character set
-    int charset = m_charset ^ (ch > 128 ? 1 : 0);
-    ch &= 0x7f;
-    int symbol = ch;
-    if (ch >= (unsigned char)'@' && charset != 0)
-        symbol += 68;
-
     // Get the address of the character in the character generator
-    const unsigned short* pchardata = RobotronFont + int(symbol - 32) * 9;
+    const unsigned short* pchardata = gl->data;
 
     float step = float(m_shiftx) / 11.0f;  // Horizontal step
     float y = float(m_y);
