@@ -17,7 +17,8 @@ UKNCBTL. If not, see <http://www.gnu.org/licenses/>. */
 // TxtChunk
 static void printOver(unsigned short& c1, unsigned short c2) {
 	char c;
-	if(c1==(c='`') || (c2==c && (c2=c1))) {
+	if(c1==32) {
+	} else if(c1==(c='`') || (c2==c && (c2=c1))) {
 		switch(c2) {
 			case 'A': c2 = 192; break;
 			case 'E': c2 = 200; break;

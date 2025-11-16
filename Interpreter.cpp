@@ -463,7 +463,7 @@ void EscInterpreter::printGR24(int dx)
 void EscInterpreter::PrintCharacter(unsigned char ch)
 {
 	struct glyph *gl = FontGlyph(m_charset, ch);
-
+	
 	m_output.WriteChar(gl->ansi, 
 		m_marginleft + m_x, 
 		m_margintop + m_y + (m_subscript ? 4*12 : 0),

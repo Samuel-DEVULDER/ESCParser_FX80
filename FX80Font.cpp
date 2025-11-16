@@ -3105,7 +3105,6 @@ static void FontDef(struct FontMap map[], int n) {
 }
 
 #define FD(x) FontDef(x,sizeof(x)/sizeof(x[0]))
-void f() {}
 
 struct glyph *FontGlyph(unsigned int charset, unsigned char ch) {
 	static unsigned int last;
@@ -3123,9 +3122,6 @@ struct glyph *FontGlyph(unsigned int charset, unsigned char ch) {
 			case 7: FD(cs_sp); break;
 			case 8: FD(cs_jp); break;
 		}
-	}
-	if(ch==96 || ch==96+128) {
-		f();
 	}
 	return Font[ch];
 }
