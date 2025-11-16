@@ -117,9 +117,6 @@ static std::string ascii[256] = {
 TxtChunk &TxtChunk::appendAscii(std::string &out) {
 	for(int i=0, m=size(); i<m; ++i) {
 		unsigned short c = m_buf[i];
-		if(c=='\'' || c=='\''+128) {
-			printf("!!!");
-		}
 		out.append(c<256 ? ascii[c] : "_");
 	}
 	return *this;
