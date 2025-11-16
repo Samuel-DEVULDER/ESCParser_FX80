@@ -17,8 +17,8 @@ ifeq ($(OS),Cygwin)
 endif
 
 ifeq ($(OS),win)
-        CC=i686-w64-mingw32-gcc  -m32 -static -g
-        CXX=i686-w64-mingw32-g++ -m32 -static -g
+        CC=i686-w64-mingw32-gcc  -m32 -static -s
+        CXX=i686-w64-mingw32-g++ -m32 -static -s
         MACHINE=x86
         EXE=.exe
 endif

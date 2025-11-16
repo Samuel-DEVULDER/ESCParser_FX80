@@ -216,7 +216,10 @@ private:  // Current state
     bool m_fontun;      // Underline
     bool m_superscript; // Super-script
     bool m_subscript;   // Sub-script
-    unsigned char m_charset;  // Character set number
+	bool m_italics;     // italics
+	bool m_prctl;       // printable control codes
+	unsigned char m_msb01; // force msb
+	unsigned char m_charset;  // Character set number
 
 public:
     // Constructor

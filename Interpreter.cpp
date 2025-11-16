@@ -20,9 +20,6 @@ EscInterpreter::EscInterpreter(std::istream& input, OutputDriver& output) :
     m_marginleft = 96;  // 96/720 inch = 9.6 points
     m_margintop = 160;  // 160/720 inch = 16 points
     m_endofpage = false;
-    m_fontsp = m_fontdo = m_fontfe = m_fontks = m_fontel = m_fontun = false;
-    m_superscript = m_subscript = false;
-    m_charset = 0;
 
     PrinterReset();
 }
@@ -49,6 +46,8 @@ void EscInterpreter::PrinterReset()
 
     m_superscript = m_subscript = false;
     m_charset = 0;
+	m_msb01 = 0;
+	m_italics = m_prctl = false;
 }
 
 // Update the value of m_shiftx according to the selected font
@@ -292,9 +291,9 @@ bool EscInterpreter::InterpretEscape()
         m_charset = GetNextByte();
         break;
         /* MSB control - ignore (???) */
-    case '#': break; /* clear most significant bit */
-    case '=': break; /* clear most significant bit */
-    case '>': break; /* set most significant bit */
+    case '#': m_msb01 = 0; break; /* do not touch most sig.nificant bit */
+    case '=': m_msb01 = 1; break; /* clear most significant bit */ 
+	case '>': m_msb01 = 2; break; /* set most significant bit */
         /* print table control */
     case '6': break; /* select upper character set */
     case '7': break; /* select lower character set */
@@ -341,6 +340,12 @@ bool EscInterpreter::InterpretEscape()
         m_fontdo = false;
         m_superscript = m_subscript = false;
         break;
+	case 'I': // Control code selection
+        {
+            unsigned char ss = GetNextByte();
+            m_prctl = (ss != 0 && ss != '0');
+        }
+        break;
     case '-': // Underline
         {
             unsigned char ss = GetNextByte();
@@ -377,9 +382,9 @@ bool EscInterpreter::InterpretEscape()
         }
         break;
         /* italic print */
-    case '4': /* set italics */
+    case '4': m_italics = true;  /* set italics */
         break;
-    case '5': /* clear itelics */
+    case '5': m_italics = false; /* clear itelics */
         break;
         /* character table */
     case 't': /* select character table ??? */
@@ -462,6 +467,11 @@ void EscInterpreter::printGR24(int dx)
 
 void EscInterpreter::PrintCharacter(unsigned char ch)
 {
+	if(!m_prctl && ((ch&0x7F)<32)) return; 
+
+	if(m_msb01==2 || m_italics) ch |= 0x80;
+	else if (m_msb01==1)        ch &= 0x7F;
+	
 	struct glyph *gl = FontGlyph(m_charset, ch);
 	
 	m_output.WriteChar(gl->ansi, 
@@ -506,8 +516,6 @@ void EscInterpreter::PrintCharacter(unsigned char ch)
             DrawStrike(m_x + col * step, y);
             if (m_fontsp)
                 DrawStrike(m_x + (col + 1.0f) * step, y);
-
-            //TODO: Take into account m_fontfe (bold font)
         }
 
         y += 12;  // 12 corresponds to 1/60 inch
@@ -522,10 +530,11 @@ void EscInterpreter::DrawStrike(float x, float y)
 {
     float cx = float(m_marginleft) + x;
     float cy = float(m_margintop) + y;
-    //TODO: Take into account m_fontdo in the point radius
-    float cr = 6.0f;
+    float cr = m_fontfe ? 8.0f : 6.0f;
 
     m_output.WriteStrike(cx, cy, cr);
+	// m_fontdo: add a point 1/216 inch below
+	if(m_fontdo) m_output.WriteStrike(cx, cy+0.33333333333333f, cr);
 }
 
 
