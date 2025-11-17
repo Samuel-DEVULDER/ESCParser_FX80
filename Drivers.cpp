@@ -156,18 +156,23 @@ void TxtChunk::set(unsigned short ch, int x, int y, int w, int h) {
 //////////////////////////////////////////////////////////////////////
 // txt driver
 
-void OutputDriverTxt::WriteEnding()
+static void flushAsciiTo(TxtChunk &txt, std::ostream &out)
 {
 	std::string str;
-	m_txt.trim().appendAscii(str).clear();
-	m_output << str;
+	txt.appendAscii(str).clear();
+	out << str;
+}
+
+void OutputDriverTxt::WriteEnding()
+{
+	flushAsciiTo(m_txt.trim(), m_output);
 }
 
 void OutputDriverTxt::WriteChar(unsigned short ch, int x, int y, int w, int h) 
 {
 	if(!m_txt.canSet(x,y,w,h)) {
 		bool eol = y != m_txt.getY();
-		WriteEnding();
+		flushAsciiTo(m_txt, m_output);
 		if(eol) m_output << std::endl;
 	}
 	m_txt.set(ch,x,y,w,h);
@@ -331,8 +336,12 @@ static void addPdfBT(std::string &str, TxtChunk &txt) {
 		// sprintf(buf, " BT /F1 %g Tf %g 100.0 Tz %g %g Tm 0 Tr (",
 			// 12.0f, 60.0f, cx-1, cy-7.5);
 		
+		// good for google but bad for edge
+		//sprintf(buf, " %g 0 0 %g %g %g Tm (",
+		//		(cw*100)/60, ch*.559f, cx-1, cy-.559*ch + 1.5);
+		
 		sprintf(buf, " %g 0 0 %g %g %g Tm (",
-				(cw*100)/60, ch*.559f, cx-1, cy-.559*ch + 1.5);
+				(cw*100)/60, ch*.7f, cx-1, cy-6);
 		
 		// sprintf(buf, " BT /F1 9 Tf %g %g Td (", cx, cy);
 		str.append(buf);
