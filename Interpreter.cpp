@@ -135,10 +135,8 @@ bool EscInterpreter::InterpretNext()
 
         /* otherwise "print" the character */
     default:
-		if(m_prctl || ((ch&0x7F)>=32)) {
-			PrintCharacter(ch);
-			m_x += m_shiftx;
-		}
+		PrintCharacter(ch);
+		m_x += m_shiftx;
         break;
     }
 
@@ -469,6 +467,8 @@ void EscInterpreter::printGR24(int dx)
 
 void EscInterpreter::PrintCharacter(unsigned char ch)
 {
+	if(!m_prctl && ((ch&0x7F)<32)) ch = 32;
+
 	if(m_msb01==2 || m_italics) ch |= 0x80;
 	else if (m_msb01==1)        ch &= 0x7F;
 	
